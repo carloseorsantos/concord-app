@@ -1,8 +1,10 @@
 FROM node:20-alpine AS base
 
+# Install OpenSSL and libc6-compat for Prisma engine support
+RUN apk add --no-cache libc6-compat openssl
+
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies based on package-lock.json
