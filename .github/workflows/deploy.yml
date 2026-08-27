@@ -61,6 +61,9 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository for compose file
+        uses: actions/checkout@v4
+
       - name: Convert Image Name to Lowercase
         id: image_info
         run: |
@@ -83,36 +86,78 @@ jobs:
             # Authenticate Docker with GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u "${{ github.actor }}" --password-stdin
 
-            # Generate/Update .env file on the server
+            # Create docker-compose.yml on the server
+            cat << 'EOF' > docker-compose.yml
+            services:
+              postgres:
+                image: postgres:16-alpine
+                container_name: concord-postgres
+                restart: always
+                environment:
+                  POSTGRES_USER: ${POSTGRES_USER:-postgres}
+                  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-concord_secret_password}
+                  POSTGRES_DB: ${POSTGRES_DB:-concord}
+                volumes:
+                  - postgres_data:/var/lib/postgresql/data
+                healthcheck:
+                  test: ["CMD-SHELL", "pg_isready -U postgres"]
+                  interval: 5s
+                  timeout: 5s
+                  retries: 5
+                networks:
+                  - concord-network
+
+              app:
+                image: ${{ steps.image_info.outputs.image }}:latest
+                container_name: concord-app
+                restart: always
+                depends_on:
+                  postgres:
+                    condition: service_healthy
+                ports:
+                  - "80:3000"
+                  - "3000:3000"
+                env_file:
+                  - .env
+                environment:
+                  - PORT=3000
+                  - NODE_ENV=production
+                  - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-concord_secret_password}@postgres:5432/${POSTGRES_DB:-concord}?schema=public
+                networks:
+                  - concord-network
+
+            volumes:
+              postgres_data:
+                driver: local
+
+            networks:
+              concord-network:
+                driver: bridge
+            EOF
+
+            # Create / Update .env file on the server
             cat << 'EOF' > .env
+            POSTGRES_USER=postgres
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD || 'concord_secret_password' }}
+            POSTGRES_DB=concord
             NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
             CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}
             NEXT_PUBLIC_CLERK_SIGN_IN_URL=${{ secrets.NEXT_PUBLIC_CLERK_SIGN_IN_URL || '/sign-in' }}
             NEXT_PUBLIC_CLERK_SIGN_UP_URL=${{ secrets.NEXT_PUBLIC_CLERK_SIGN_UP_URL || '/sign-up' }}
             NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=${{ secrets.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL || '/' }}
             NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=${{ secrets.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL || '/' }}
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
             LIVEKIT_API_KEY=${{ secrets.LIVEKIT_API_KEY }}
             LIVEKIT_API_SECRET=${{ secrets.LIVEKIT_API_SECRET }}
             NEXT_PUBLIC_LIVEKIT_URL=${{ secrets.NEXT_PUBLIC_LIVEKIT_URL || 'ws://127.0.0.1:7880' }}
             EOF
 
-            # Pull latest image
-            docker pull ${{ steps.image_info.outputs.image }}:latest
+            # Pull latest image for the app
+            docker compose pull app
 
-            # Stop and remove old container if running
-            docker stop concord-app || true
-            docker rm concord-app || true
-
-            # Run new container
-            docker run -d \
-              --name concord-app \
-              --restart always \
-              -p 3000:3000 \
-              --env-file .env \
-              ${{ steps.image_info.outputs.image }}:latest
+            # Run containers (Postgres + Concord)
+            docker compose up -d --remove-orphans
 
             # Clean up old unused images
             docker image prune -af --filter "until=24h" || true
 
-            echo "Concord deployed successfully!"
+            echo "Concord and PostgreSQL deployed and running successfully!"
