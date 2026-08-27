@@ -43,7 +43,7 @@ const ChannelIdPage = async ({ params }: ChannelIdPageProps) => {
   const isCinema = channel.type === ChannelType.CINEMA_STAGE || channel.type === ChannelType.VIDEO;
 
   return (
-    <div className="bg-[#313338] flex flex-col h-full overflow-hidden">
+    <div className="bg-[#313338] flex flex-col h-full w-full flex-1 overflow-hidden">
       <ChatHeader
         name={channel.name}
         serverId={channel.serverId}

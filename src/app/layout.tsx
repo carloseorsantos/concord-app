@@ -16,7 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className="dark h-full">
-      <body className="bg-[#0E0F12] text-[#DBDEE1] min-h-full antialiased selection:bg-[#5865F2] selection:text-white">
+      <body className="bg-[#0E0F12] text-[#DBDEE1] h-full antialiased selection:bg-[#5865F2] selection:text-white">
         <ClerkProvider>
           <QueryProvider>
             <ModalProvider />
