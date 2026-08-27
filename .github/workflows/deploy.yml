@@ -61,7 +61,7 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository for compose file
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Convert Image Name to Lowercase
@@ -86,9 +86,34 @@ jobs:
             # Authenticate Docker with GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u "${{ github.actor }}" --password-stdin
 
+            # Create Caddyfile on the server
+            cat << 'EOF' > Caddyfile
+            {$DOMAIN_NAME:concord.caducodes.com} {
+                reverse_proxy app:3000
+            }
+            EOF
+
             # Create docker-compose.yml on the server
             cat << 'EOF' > docker-compose.yml
             services:
+              caddy:
+                image: caddy:alpine
+                container_name: concord-caddy
+                restart: always
+                ports:
+                  - "80:80"
+                  - "443:443"
+                environment:
+                  - DOMAIN_NAME=${DOMAIN_NAME:-concord.caducodes.com}
+                volumes:
+                  - ./Caddyfile:/etc/caddy/Caddyfile
+                  - caddy_data:/data
+                  - caddy_config:/config
+                depends_on:
+                  - app
+                networks:
+                  - concord-network
+
               postgres:
                 image: postgres:16-alpine
                 container_name: concord-postgres
@@ -115,7 +140,6 @@ jobs:
                   postgres:
                     condition: service_healthy
                 ports:
-                  - "80:3000"
                   - "3000:3000"
                 env_file:
                   - .env
@@ -129,6 +153,10 @@ jobs:
             volumes:
               postgres_data:
                 driver: local
+              caddy_data:
+                driver: local
+              caddy_config:
+                driver: local
 
             networks:
               concord-network:
@@ -137,6 +165,7 @@ jobs:
 
             # Create / Update .env file on the server
             cat << 'EOF' > .env
+            DOMAIN_NAME=${{ secrets.DOMAIN_NAME || 'concord.caducodes.com' }}
             POSTGRES_USER=postgres
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD || 'concord_secret_password' }}
             POSTGRES_DB=concord
@@ -154,10 +183,10 @@ jobs:
             # Pull latest image for the app
             docker compose pull app
 
-            # Run containers (Postgres + Concord)
+            # Run containers (Caddy + Postgres + Concord)
             docker compose up -d --remove-orphans
 
             # Clean up old unused images
             docker image prune -af --filter "until=24h" || true
 
-            echo "Concord and PostgreSQL deployed and running successfully!"
+            echo "Concord, Caddy HTTPS, and PostgreSQL deployed and running successfully!"

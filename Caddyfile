@@ -1,0 +1,3 @@
+{$DOMAIN_NAME:concord.caducodes.com} {
+    reverse_proxy app:3000
+}

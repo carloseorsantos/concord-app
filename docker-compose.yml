@@ -1,4 +1,22 @@
 services:
+  caddy:
+    image: caddy:alpine
+    container_name: concord-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME:-concord.caducodes.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    networks:
+      - concord-network
+
   postgres:
     image: postgres:16-alpine
     container_name: concord-postgres
@@ -25,7 +43,6 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "80:3000"
       - "3000:3000"
     env_file:
       - .env
@@ -38,6 +55,10 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
     driver: local
 
 networks:
