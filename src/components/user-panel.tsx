@@ -5,7 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Mic, MicOff, Headphones, Settings, PhoneOff } from "lucide-react";
 import { ActionTooltip } from "@/components/ui/tooltip";
 import { useModal } from "@/hooks/use-modal-store";
-import { useMediaEngine } from "@/hooks/use-media-engine";
+import { useVoiceState } from "@/hooks/use-voice-state";
 
 interface UserPanelProps {
   profile: Profile;
@@ -13,10 +13,18 @@ interface UserPanelProps {
 
 export const UserPanel = ({ profile }: UserPanelProps) => {
   const { onOpen } = useModal();
-  const { isMuted, isDeafened, isJoined, channelName, toggleMic, setIsDeafened, leaveRoom } = useMediaEngine();
+  const {
+    isMuted,
+    isDeafened,
+    isInCall,
+    currentChannelName,
+    toggleMic,
+    setIsDeafened,
+    disconnect,
+  } = useVoiceState();
 
   return (
-    <div className="h-14 bg-[#232428] px-2 flex items-center justify-between border-t border-[#1F2023] select-none">
+    <div className="h-14 bg-[#232428] px-2 flex items-center justify-between border-t border-[#1F2023] select-none shrink-0">
       <div className="flex items-center gap-x-2 truncate hover:bg-[#35373C] p-1 rounded-md cursor-pointer transition flex-1 min-w-0 mr-1">
         <div className="relative shrink-0">
           <Avatar className="h-8 w-8">
@@ -32,9 +40,9 @@ export const UserPanel = ({ profile }: UserPanelProps) => {
             {profile.name}
           </span>
           <span className="text-[10px] text-zinc-400 font-mono truncate">
-            {isJoined ? (
+            {isInCall ? (
               <span className="text-[#23A55A] font-semibold">
-                ● Conectado {channelName ? `(#${channelName})` : ""}
+                ● Conectado {currentChannelName ? `(#${currentChannelName})` : ""}
               </span>
             ) : (
               "#online"
@@ -44,10 +52,10 @@ export const UserPanel = ({ profile }: UserPanelProps) => {
       </div>
 
       <div className="flex items-center gap-x-0.5 shrink-0">
-        {isJoined && (
+        {isInCall && (
           <ActionTooltip label="Desconectar da Chamada">
             <button
-              onClick={leaveRoom}
+              onClick={disconnect}
               className="p-1.5 hover:bg-[#DA373C]/20 rounded-md text-[#DA373C] hover:text-[#ED4245] transition mr-0.5"
             >
               <PhoneOff className="h-4 w-4" />
