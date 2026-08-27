@@ -1,6 +1,5 @@
 import { currentUser, auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { redirect } from "next/navigation";
 
 export const initialProfile = async () => {
   const user = await currentUser();
@@ -15,15 +14,36 @@ export const initialProfile = async () => {
     },
   });
 
+  const fullName =
+    `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+    user.username ||
+    "Usuário Concord";
+  const userImage = user.imageUrl || "";
+
   if (profile) {
+    // Sincroniza foto ou nome alterado
+    if (
+      profile.imageUrl !== userImage ||
+      (fullName && profile.name !== fullName)
+    ) {
+      return await db.profile.update({
+        where: {
+          id: profile.id,
+        },
+        data: {
+          name: fullName,
+          imageUrl: userImage,
+        },
+      });
+    }
     return profile;
   }
 
   const newProfile = await db.profile.create({
     data: {
       userId: user.id,
-      name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || "Usuário Concord",
-      imageUrl: user.imageUrl,
+      name: fullName,
+      imageUrl: userImage,
       email: user.emailAddresses[0]?.emailAddress || "",
     },
   });

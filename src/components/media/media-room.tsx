@@ -19,6 +19,7 @@ import {
   Clapperboard,
   LogIn,
 } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 import { useStreamQuality } from "@/hooks/use-stream-quality";
 import { useModal } from "@/hooks/use-modal-store";
 import { useVolumeMixer } from "@/hooks/use-volume-mixer";
@@ -43,6 +44,7 @@ export const MediaRoom = ({
   chatId,
   isCinemaStage = false,
 }: MediaRoomProps) => {
+  const { user } = useUser();
   const { onOpen } = useModal();
   const { preset, cinemaMode, toggleCinemaMode } = useStreamQuality();
   const { streamVolumes, setStreamVolume } = useVolumeMixer();
@@ -346,8 +348,9 @@ export const MediaRoom = ({
                             : "border-2 border-transparent"
                         )}
                       >
+                        <AvatarImage src={user?.imageUrl} className="object-cover" />
                         <AvatarFallback className="bg-[#5865F2] font-bold text-white uppercase text-lg">
-                          VC
+                          {user?.firstName?.[0] || user?.username?.[0] || "VC"}
                         </AvatarFallback>
                       </Avatar>
                       {isSpeaking && !isMuted && (
@@ -404,14 +407,15 @@ export const MediaRoom = ({
                     <div className="relative">
                       <Avatar
                         className={cn(
-                          "h-32 w-32 md:h-40 md:w-40 transition-all duration-200 text-4xl",
+                          "h-32 w-32 md:h-40 md:w-40 transition-all duration-200 text-4xl shadow-2xl",
                           isSpeaking && !isMuted
                             ? "ring-4 ring-[#23A55A] ring-offset-4 ring-offset-[#2B2D31] shadow-lg"
                             : "border-2 border-transparent"
                         )}
                       >
+                        <AvatarImage src={user?.imageUrl} className="object-cover" />
                         <AvatarFallback className="bg-[#5865F2] font-bold text-white uppercase">
-                          VC
+                          {user?.firstName?.[0] || user?.username?.[0] || "VC"}
                         </AvatarFallback>
                       </Avatar>
                       {isSpeaking && !isMuted && (
