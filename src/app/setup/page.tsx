@@ -7,7 +7,7 @@ const SetupPage = async () => {
   const profile = await initialProfile();
 
   if (!profile) {
-    return null;
+    return redirect("/sign-in");
   }
 
   const server = await db.server.findFirst({
@@ -24,7 +24,11 @@ const SetupPage = async () => {
     return redirect(`/servers/${server.id}`);
   }
 
-  return <InitialModal />;
+  return (
+    <div className="h-full flex items-center justify-center bg-[#1E1F22]">
+      <InitialModal />
+    </div>
+  );
 };
 
 export default SetupPage;
