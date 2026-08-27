@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 13% 18%;
+    --foreground: 0 0% 100%;
+
+    --card: 223 7% 20%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 223 7% 12%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 235 86% 65%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 223 7% 24%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 223 7% 28%;
+    --muted-foreground: 220 9% 70%;
+
+    --accent: 235 86% 65%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 359 83% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 223 7% 25%;
+    --input: 223 7% 20%;
+    --ring: 235 86% 65%;
+
+    --radius: 0.5rem;
+  }
+}
+
+html,
+body,
+:root {
+  height: 100%;
+  min-height: 100%;
+}
+
+body {
+  color: #DBDEE1;
+  background: #313338;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  overflow: hidden;
+  user-select: none;
+  height: 100%;
+}
+
+/* Custom Discord Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2B2D31;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1A1B1E;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #111214;
+}
+
+/* LiveKit Video Styles */
+.lk-video-container {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.cinema-glow {
+  box-shadow: 0 0 50px -10px rgba(88, 101, 242, 0.35);
+}
